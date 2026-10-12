@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  hooky:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hooky
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=/app/data/hooky.db
+    volumes:
+      - ./data:/app/data
