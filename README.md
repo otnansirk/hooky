@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hooky
 
-## Getting Started
+Hooky is an open-source platform for catching, inspecting, and debugging HTTP requests and webhooks in real-time. Built as a self-hostable alternative to webhook.site, it lets you test webhook integrations locally or in production.
 
-First, run the development server:
+---
+
+## Features
+
+- **Instant URL Generation**: Get a unique webhook endpoint immediately when visiting the app.
+- **Catch All HTTP Methods**: Captures GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD requests.
+- **Real-Time Stream**: Inspect incoming requests live without manual refreshing, powered by Server-Sent Events (SSE).
+- **Deep Inspection**: View parsed headers, query parameters, formatted JSON bodies, raw payloads, origin IP, and timestamps.
+- **cURL Replay**: Copy a complete cURL command with all headers and body payloads to replay requests directly from your terminal.
+- **Persistent Storage**: Built-in SQLite database managed with Drizzle ORM and WAL mode for reliable concurrency.
+- **Ready for Self-Hosting**: Multi-stage Docker image and Docker Compose setup included.
+
+---
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, React 19)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Database & ORM**: [Drizzle ORM](https://orm.drizzle.team/) with SQLite (`better-sqlite3`)
+- **Real-Time**: Server-Sent Events (SSE) via native Node.js event emitter
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Node.js 20 or higher
+- pnpm (or npm / yarn)
+
+### 1. Local Development
+
+Clone the repository and install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/hooky.git
+cd hooky
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Start the development server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) in your browser. You will be redirected to an active inspector session.
 
-## Learn More
+### 2. Run with Docker (Self-Hosting)
 
-To learn more about Next.js, take a look at the following resources:
+Run Hooky in a container with persistent SQLite storage:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker compose up -d
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Access the dashboard at [http://localhost:3000](http://localhost:3000). Data is persisted locally in the `./data` directory.
 
-## Deploy on Vercel
+To stop the container:
+```bash
+docker compose down
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Production Node.js Server
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm build
+node .next/standalone/server.js
+```
+
+---
+
+## Sending Test Webhooks
+
+Once Hooky is running, send a test payload using cURL:
+
+```bash
+# Replace <YOUR_ENDPOINT_ID> with the ID from your dashboard
+curl -X POST "http://localhost:3000/e/<YOUR_ENDPOINT_ID>" \
+  -H "Content-Type: application/json" \
+  -d '{"event": "payment.succeeded", "amount": 250000, "customer": "Dev Community"}'
+```
+
+The request will show up on your dashboard instantly.
+
+---
+
+## Running Tests
+
+Run the end-to-end test suite:
+
+```bash
+pnpm test:e2e
+```
+
+---
+
+## Contributing
+
+Contributions from the open-source community are welcome!
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/my-new-feature`).
+3. Commit your changes (`git commit -m 'Add new feature'`).
+4. Push to the branch (`git push origin feature/my-new-feature`).
+5. Open a Pull Request.
+
+Please adhere to the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+
+---
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). By participating in this project, you agree to uphold this code.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
