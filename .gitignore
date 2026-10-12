@@ -46,3 +46,8 @@ next-env.d.ts
 *.db-shm
 *.db-wal
 !.env.example
+
+# wrangler local config (protect private database_id from git commits)
+wrangler.local.jsonc
+wrangler.local.toml
+
