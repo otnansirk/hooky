@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, endpoints, requests } from '@/db';
+import { getDb, endpoints, requests, type WebhookRequest } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 
 export async function GET(
@@ -9,23 +9,23 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    const endpoint = db
+    const db = await getDb();
+    const endpointList = await db
       .select()
       .from(endpoints)
       .where(eq(endpoints.id, id))
-      .get();
+      .limit(1);
 
-    if (!endpoint) {
+    if (endpointList.length === 0) {
       return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
     }
 
-    const items = db
+    const items: WebhookRequest[] = await db
       .select()
       .from(requests)
       .where(eq(requests.endpointId, id))
       .orderBy(desc(requests.createdAt))
-      .limit(100)
-      .all();
+      .limit(100);
 
     const formatted = items.map((item) => ({
       ...item,
@@ -34,7 +34,7 @@ export async function GET(
     }));
 
     return NextResponse.json({
-      endpoint,
+      endpoint: endpointList[0],
       requests: formatted,
     });
   } catch (error) {
@@ -50,9 +50,8 @@ export async function DELETE(
   const { id } = await context.params;
 
   try {
-    db.delete(requests)
-      .where(eq(requests.endpointId, id))
-      .run();
+    const db = await getDb();
+    await db.delete(requests).where(eq(requests.endpointId, id));
 
     return NextResponse.json({ success: true, message: 'All requests deleted' });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, endpoints, requests } from '@/db';
+import { getDb, endpoints, requests } from '@/db';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { broadcastNewRequest } from '@/lib/events';
@@ -16,42 +16,35 @@ async function handleWebhook(
   }
 
   const now = new Date();
+  const db = await getDb();
 
   // Upsert or ensure endpoint exists
-  const existing = db
+  const existingList = await db
     .select()
     .from(endpoints)
     .where(eq(endpoints.id, endpointId))
-    .get();
+    .limit(1);
 
-  if (!existing) {
-    db.insert(endpoints)
-      .values({
-        id: endpointId,
-        createdAt: now,
-        lastActive: now,
-      })
-      .run();
+  if (existingList.length === 0) {
+    await db.insert(endpoints).values({
+      id: endpointId,
+      createdAt: now,
+      lastActive: now,
+    });
   } else {
-    db.update(endpoints)
-      .set({ lastActive: now })
-      .where(eq(endpoints.id, endpointId))
-      .run();
+    await db.update(endpoints).set({ lastActive: now }).where(eq(endpoints.id, endpointId));
   }
 
-  // Extract headers
   const headersObj: Record<string, string> = {};
   req.headers.forEach((value, key) => {
     headersObj[key] = value;
   });
 
-  // Extract query parameters
   const queryParamsObj: Record<string, string> = {};
   req.nextUrl.searchParams.forEach((value, key) => {
     queryParamsObj[key] = value;
   });
 
-  // Extract body
   let bodyText = '';
   try {
     bodyText = await req.text();
@@ -59,7 +52,6 @@ async function handleWebhook(
     bodyText = '';
   }
 
-  // Extract & normalize IP
   const forwarded = req.headers.get('x-forwarded-for');
   let rawIp = forwarded
     ? forwarded.split(',')[0].trim()
@@ -86,7 +78,7 @@ async function handleWebhook(
     createdAt: now,
   };
 
-  db.insert(requests).values(newRequest).run();
+  await db.insert(requests).values(newRequest);
 
   const formattedForBroadcast = {
     ...newRequest,
