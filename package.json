@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
     "start": "next start",
     "test:e2e": "node test/e2e.test.mjs",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:vinext": "vite dev --port 3001",
+    "build:vinext": "vite build",
+    "start:vinext": "wrangler dev worker.js --assets dist/client",
+    "deploy:vinext": "wrangler deploy worker.js --assets dist/client"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
@@ -19,22 +22,29 @@
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tailwind-merge": "^3.7.0"
+    "react-server-dom-webpack": "^19.3.0",
+    "tailwind-merge": "^3.7.0",
+    "vinext": "^1.1.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.10",
+    "@cloudflare/vite-plugin": "^1.63.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/turbopack": "^4",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-rsc": "^0.5.36",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite": "^8.3.4",
     "wrangler": "^4.149.0"
   },
-  "packageManager": "pnpm@11.13.0"
+  "packageManager": "pnpm@11.13.0",
+  "type": "module"
 }
