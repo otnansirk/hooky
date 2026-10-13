@@ -1,13 +1,30 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
-import path from 'path';
-import fs from 'fs';
+import { drizzle as drizzleD1 } from 'drizzle-orm/d1';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+// Cache local db instance in Node.js
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _localDb: any = null;
 
-export function getDb() {
-  if (_db) return _db;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getDb(): Promise<any> {
+  // Cloudflare Workers: read D1 binding from workerd runtime environment
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { env } = (await import('cloudflare:workers')) as any;
+    if (env?.DB) {
+      return drizzleD1(env.DB, { schema });
+    }
+  } catch {
+    // Falls through to local SQLite outside Cloudflare Workers
+  }
+
+  // Local SQLite instance for Node.js development and Docker containers
+  if (_localDb) return _localDb;
+
+  const { default: Database } = await import('better-sqlite3');
+  const { drizzle: drizzleSqlite } = await import('drizzle-orm/better-sqlite3');
+  const path = await import('path');
+  const fs = await import('fs');
 
   const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'hooky.db');
   const dir = path.dirname(dbPath);
@@ -19,7 +36,6 @@ export function getDb() {
   const sqlite = new Database(dbPath);
   sqlite.pragma('journal_mode = WAL');
 
-  // Auto-init tables if not exist for zero-friction local/docker startup
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS endpoints (
       id TEXT PRIMARY KEY,
@@ -43,9 +59,8 @@ export function getDb() {
     CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at);
   `);
 
-  _db = drizzle(sqlite, { schema });
-  return _db;
+  _localDb = drizzleSqlite(sqlite, { schema });
+  return _localDb;
 }
 
-export const db = getDb();
 export * from './schema';

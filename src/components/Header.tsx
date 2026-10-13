@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, Terminal, Trash2, Plus, Webhook } from 'lucide-react';
+import { Copy, Check, Terminal, Trash2, Plus } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface HeaderProps {
   endpointId: string;
@@ -46,10 +47,17 @@ export function Header({
         <div className="flex items-center space-x-3">
           <Link
             href="/"
-            className="flex items-center space-x-2 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 min-h-[44px] sm:min-h-0 py-1"
+            className="flex items-center space-x-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 min-h-[44px] sm:min-h-0 py-1"
           >
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-              <Webhook className="h-4 w-4" />
+            <div className="h-8 w-8 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-zinc-700 transition-colors relative">
+              <Image
+                src="/logo.png"
+                alt="Hooky Logo"
+                width={32}
+                height={32}
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                priority
+              />
             </div>
             <span className="font-bold text-lg text-zinc-100 tracking-tight">Hooky</span>
           </Link>

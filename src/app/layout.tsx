@@ -15,6 +15,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Hooky | Real-Time Webhook & HTTP Request Inspector",
   description: "Capture, inspect, and debug webhooks and HTTP requests in real-time.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
