@@ -33,6 +33,20 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
 
   const webhookUrl = `${origin || ''}/e/${endpointId}`;
 
+  // Merge incoming requests by id, newest first
+  const mergeRequests = useCallback((incoming: CapturedRequest[]) => {
+    if (incoming.length === 0) return;
+    setRequests((prev) => {
+      const known = new Set(prev.map((r) => r.id));
+      const fresh = incoming.filter((r) => !known.has(r.id));
+      if (fresh.length === 0) return prev;
+      return [...fresh, ...prev].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+    setSelectedId((prev) => prev ?? incoming[0].id);
+  }, []);
+
   // Fetch initial requests with explicit loading and error handling
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -41,10 +55,9 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
       const res = await fetch(`/api/endpoints/${endpointId}/requests`);
       if (res.ok) {
         const data = await res.json();
-        setRequests(data.requests || []);
-        if (data.requests && data.requests.length > 0 && !selectedId) {
-          setSelectedId(data.requests[0].id);
-        }
+        const list: CapturedRequest[] = data.requests || [];
+        setRequests(list);
+        setSelectedId((prev) => prev ?? list[0]?.id ?? null);
       } else {
         setErrorMessage('Unable to load requests. Please check your network or try again.');
       }
@@ -53,12 +66,14 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
     } finally {
       setIsLoading(false);
     }
-  }, [endpointId, selectedId]);
+  }, [endpointId]);
 
-  // Connect to SSE stream
   useEffect(() => {
     fetchRequests();
+  }, [fetchRequests]);
 
+  // Connect to SSE stream for instant updates (works with the single-process Node server)
+  useEffect(() => {
     let eventSource: EventSource | null = null;
     let reconnectTimeout: NodeJS.Timeout;
 
@@ -75,12 +90,7 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
 
       eventSource.addEventListener('request', (event) => {
         try {
-          const newReq: CapturedRequest = JSON.parse(event.data);
-          setRequests((prev) => {
-            if (prev.some((r) => r.id === newReq.id)) return prev;
-            return [newReq, ...prev];
-          });
-          setSelectedId((prev) => prev ?? newReq.id);
+          mergeRequests([JSON.parse(event.data)]);
         } catch (e) {
           console.error('Failed to parse SSE payload:', e);
         }
@@ -103,7 +113,30 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
         eventSource.close();
       }
     };
-  }, [endpointId, fetchRequests]);
+  }, [endpointId, mergeRequests]);
+
+  // Poll for new requests as a fallback. The in-memory event emitter behind SSE only
+  // reaches clients on the same process/isolate, so on Cloudflare Workers (or multiple
+  // instances) SSE never delivers and polling is what keeps the list live.
+  const latestCreatedAt = requests[0] ? new Date(requests[0].createdAt).getTime() : 0;
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const res = await fetch(
+          `/api/endpoints/${endpointId}/requests?since=${latestCreatedAt}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          mergeRequests(data.requests || []);
+        }
+      } catch {
+        // transient network error, retry on next tick
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [endpointId, latestCreatedAt, mergeRequests]);
 
   const handleClear = async () => {
     if (!confirm('Are you sure you want to delete all captured requests for this endpoint?')) {

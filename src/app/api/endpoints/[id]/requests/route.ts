@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, endpoints, requests, type WebhookRequest } from '@/db';
-import { eq, desc } from 'drizzle-orm';
+import { and, eq, desc, gte } from 'drizzle-orm';
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  // Optional epoch-ms cursor so the dashboard can poll only for newer requests
+  const since = Number(req.nextUrl.searchParams.get('since'));
 
   try {
     const db = await getDb();
@@ -23,7 +25,11 @@ export async function GET(
     const items: WebhookRequest[] = await db
       .select()
       .from(requests)
-      .where(eq(requests.endpointId, id))
+      .where(
+        since > 0
+          ? and(eq(requests.endpointId, id), gte(requests.createdAt, new Date(since)))
+          : eq(requests.endpointId, id)
+      )
       .orderBy(desc(requests.createdAt))
       .limit(100);
 
