@@ -5,6 +5,7 @@ import { CapturedRequest } from '@/types';
 import { Header } from './Header';
 import { RequestList } from './RequestList';
 import { RequestDetail } from './RequestDetail';
+import { ResponseSettingsModal } from './ResponseSettingsModal';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -24,6 +25,7 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [origin, setOrigin] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -181,7 +183,12 @@ export function Dashboard({ endpointId, initialRequests = [] }: DashboardProps) 
         requestCount={requests.length}
         onClear={handleClear}
         onNewEndpoint={handleNewEndpoint}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
+
+      {isSettingsOpen && (
+        <ResponseSettingsModal endpointId={endpointId} onClose={() => setIsSettingsOpen(false)} />
+      )}
 
       {/* Global Error Banner if something went wrong */}
       {errorMessage && (

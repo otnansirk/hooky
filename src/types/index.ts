@@ -14,3 +14,11 @@ export interface EndpointData {
   createdAt: string | Date;
   lastActive: string | Date;
 }
+
+export interface ResponseSettings {
+  status: number;
+  contentType: string;
+  headers: Record<string, string>;
+  // null means the default Hooky JSON reply
+  body: string | null;
+}

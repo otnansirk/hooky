@@ -3,6 +3,7 @@ import { getDb, endpoints, requests } from '@/db';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { broadcastNewRequest } from '@/lib/events';
+import { buildWebhookResponse, toResponseSettings, DEFAULT_RESPONSE_SETTINGS } from '@/lib/response-settings';
 
 async function handleWebhook(
   req: NextRequest,
@@ -24,6 +25,9 @@ async function handleWebhook(
     .from(endpoints)
     .where(eq(endpoints.id, endpointId))
     .limit(1);
+
+  const responseSettings =
+    existingList.length > 0 ? toResponseSettings(existingList[0]) : DEFAULT_RESPONSE_SETTINGS;
 
   if (existingList.length === 0) {
     await db.insert(endpoints).values({
@@ -94,17 +98,7 @@ async function handleWebhook(
     'Access-Control-Allow-Headers': '*',
   };
 
-  return NextResponse.json(
-    {
-      success: true,
-      message: 'Request captured by Hooky',
-      requestId,
-    },
-    {
-      status: 200,
-      headers: corsHeaders,
-    }
-  );
+  return buildWebhookResponse(responseSettings, requestId, newRequest.method, corsHeaders);
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ slug: string[] }> }) {

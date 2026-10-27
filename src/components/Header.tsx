@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, Terminal, Trash2, Plus } from 'lucide-react';
+import { Copy, Check, Terminal, Trash2, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -12,6 +12,7 @@ interface HeaderProps {
   requestCount: number;
   onClear: () => void;
   onNewEndpoint: () => void;
+  onOpenSettings: () => void;
 }
 
 export function Header({
@@ -21,6 +22,7 @@ export function Header({
   requestCount,
   onClear,
   onNewEndpoint,
+  onOpenSettings,
 }: HeaderProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -123,6 +125,15 @@ export function Header({
               <Terminal className="h-3.5 w-3.5 text-zinc-400" />
             )}
             <span className="hidden sm:inline">Copy cURL</span>
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            className="px-3 py-2 sm:py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs flex items-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 min-h-[44px] sm:min-h-0 cursor-pointer"
+            title="Customize the response returned to webhook senders"
+          >
+            <Settings className="h-3.5 w-3.5 text-zinc-400" />
+            <span className="hidden sm:inline">Response</span>
           </button>
 
           {requestCount > 0 && (
