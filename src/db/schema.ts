@@ -8,6 +8,11 @@ export const endpoints = sqliteTable('endpoints', {
   lastActive: integer('last_active', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),
+  // Custom response returned by /e/[id]; a null body means the default Hooky JSON reply
+  responseStatus: integer('response_status').notNull().default(200),
+  responseContentType: text('response_content_type').notNull().default('application/json'),
+  responseHeaders: text('response_headers').notNull().default('{}'),
+  responseBody: text('response_body'),
 });
 
 export const requests = sqliteTable('requests', {

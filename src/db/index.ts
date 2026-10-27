@@ -40,7 +40,11 @@ export async function getDb(): Promise<any> {
     CREATE TABLE IF NOT EXISTS endpoints (
       id TEXT PRIMARY KEY,
       created_at INTEGER NOT NULL,
-      last_active INTEGER NOT NULL
+      last_active INTEGER NOT NULL,
+      response_status INTEGER NOT NULL DEFAULT 200,
+      response_content_type TEXT NOT NULL DEFAULT 'application/json',
+      response_headers TEXT NOT NULL DEFAULT '{}',
+      response_body TEXT
     );
 
     CREATE TABLE IF NOT EXISTS requests (
@@ -58,6 +62,22 @@ export async function getDb(): Promise<any> {
     CREATE INDEX IF NOT EXISTS idx_requests_endpoint_id ON requests(endpoint_id);
     CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at);
   `);
+
+  // Add response settings columns to databases created before they existed
+  const endpointColumns = new Set(
+    (sqlite.prepare('PRAGMA table_info(endpoints)').all() as { name: string }[]).map((c) => c.name)
+  );
+  const responseColumns: [string, string][] = [
+    ['response_status', 'INTEGER NOT NULL DEFAULT 200'],
+    ['response_content_type', "TEXT NOT NULL DEFAULT 'application/json'"],
+    ['response_headers', "TEXT NOT NULL DEFAULT '{}'"],
+    ['response_body', 'TEXT'],
+  ];
+  for (const [name, definition] of responseColumns) {
+    if (!endpointColumns.has(name)) {
+      sqlite.exec(`ALTER TABLE endpoints ADD COLUMN ${name} ${definition}`);
+    }
+  }
 
   _localDb = drizzleSqlite(sqlite, { schema });
   return _localDb;
