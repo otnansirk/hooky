@@ -11,7 +11,7 @@
     "dev:vinext": "vite dev --port 3001",
     "build:vinext": "vite build",
     "start:vinext": "wrangler dev worker.js --assets dist/client",
-    "deploy:vinext": "wrangler deploy worker.js --assets dist/client"
+    "deploy:vinext": "wrangler d1 migrations apply hooky-db --remote && wrangler deploy worker.js --assets dist/client"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
